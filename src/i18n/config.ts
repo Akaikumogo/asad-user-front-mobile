@@ -1,12 +1,21 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
-import LanguageDetector from 'i18next-browser-languagedetector'
 import uzTranslations from './locales/uz.json'
 import enTranslations from './locales/en.json'
 import ruTranslations from './locales/ru.json'
 
+// NOTE: We intentionally avoid direct `localStorage` usage here.
+// The app persists language via Capacitor Preferences (`src/lib/storage.ts`)
+// and loads it in `useLanguageStore.loadLanguage()`.
+const getNavigatorLanguage = (): 'uz' | 'en' | 'ru' => {
+  if (typeof navigator === 'undefined') return 'uz'
+  const lang = (navigator.language || '').toLowerCase()
+  if (lang.startsWith('ru')) return 'ru'
+  if (lang.startsWith('en')) return 'en'
+  return 'uz'
+}
+
 i18n
-  .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     resources: {
@@ -14,14 +23,11 @@ i18n
       en: { translation: enTranslations },
       ru: { translation: ruTranslations },
     },
+    lng: getNavigatorLanguage(),
     fallbackLng: 'uz', // Default: O'zbek tili
     debug: false,
     interpolation: {
       escapeValue: false,
-    },
-    detection: {
-      order: ['localStorage', 'navigator'],
-      caches: ['localStorage'],
     },
   })
 

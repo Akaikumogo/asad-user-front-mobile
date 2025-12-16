@@ -1,7 +1,9 @@
 ext {
-    minSdkVersion = 22
-    compileSdkVersion = 33
-    targetSdkVersion = 33
+    // Capacitor v7 references Android 15 (API 35) constants (e.g. VANILLA_ICE_CREAM),
+    // so compileSdk/targetSdk must be >= 35 for CI/Appflow builds.
+    minSdkVersion = 23
+    compileSdkVersion = 35
+    targetSdkVersion = 35
     androidxActivityVersion = '1.7.0'
     androidxAppCompatVersion = '1.6.1'
     androidxCoordinatorLayoutVersion = '1.2.0'
