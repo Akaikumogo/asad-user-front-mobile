@@ -90,6 +90,8 @@
     "speakNow": "Endi gapiring...",
     "status": "Holat",
     "ultrasonicMode": "Ultrasonik avtomatik rejim",
+    "auto": "Avtomatik",
+    "manual": "Qo'lda",
     "ultrasonicAutoDesc": "Avtomatik: Nasos suv darajasiga qarab yoqiladi/o'chadi",
     "ultrasonicManualDesc": "Qo'lda: Nasos faqat tugmalar va timer orqali boshqariladi",
     "offlineWarning": "Qurilma oflayn. Barcha amallar o'chirilgan."

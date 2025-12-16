@@ -70,6 +70,8 @@ export const DeviceDetail: React.FC = () => {
 
   // Check if device is offline - disable all actions
   const isDeviceOffline = device?.status === 'OFFLINE';
+  const ultrasonicEnabled = device?.ultrasonic ?? true;
+  const [isUltrasonicBlinkOn, setIsUltrasonicBlinkOn] = useState(false);
 
   // Control panel functions
   const handleMotorCommand = useCallback(
@@ -206,6 +208,19 @@ export const DeviceDetail: React.FC = () => {
     stopListening
   } = useVoiceCommand(handleVoiceCommand, language);
 
+  // Ultrasonic manual mode indicator (blink green when ultrasonic is OFF)
+  useEffect(() => {
+    if (ultrasonicEnabled) {
+      setIsUltrasonicBlinkOn(false);
+      return;
+    }
+    setIsUltrasonicBlinkOn(true);
+    const blink = window.setInterval(() => {
+      setIsUltrasonicBlinkOn((v) => !v);
+    }, 650);
+    return () => window.clearInterval(blink);
+  }, [ultrasonicEnabled]);
+
   useEffect(() => {
     const fetchDevice = async () => {
       if (!id) return;
@@ -334,6 +349,8 @@ export const DeviceDetail: React.FC = () => {
   // Real-time updates via WebSocket
   useEffect(() => {
     if (!id) return;
+    // Only enable realtime updates when ultrasonic mode is ON
+    if (!ultrasonicEnabled) return;
 
     const setupWebSocket = async () => {
       try {
@@ -385,13 +402,15 @@ export const DeviceDetail: React.FC = () => {
             if (data.deviceId === id) {
               setDevice((prev) => {
                 if (!prev) return prev;
-                
+
                 const prevStatus = prev.status;
                 const updated = {
                   ...prev,
                   status: data.status,
                   waterDepth:
-                    data.waterDepth !== undefined ? data.waterDepth : prev.waterDepth,
+                    data.waterDepth !== undefined
+                      ? data.waterDepth
+                      : prev.waterDepth,
                   totalLitres:
                     data.totalLitres !== undefined
                       ? data.totalLitres
@@ -410,12 +429,14 @@ export const DeviceDetail: React.FC = () => {
                       : prev.activeMotor2,
                   height: data.height !== undefined ? data.height : prev.height,
                   motorState:
-                    data.motorState !== undefined ? data.motorState : prev.motorState
+                    data.motorState !== undefined
+                      ? data.motorState
+                      : prev.motorState
                 };
-                
+
                 // Store'ni ham darhol yangilash
                 updateDevice(updated);
-                
+
                 // Notification'ni async qilamiz (state yangilanishi darhol)
                 if (prevStatus !== data.status) {
                   void pushNotificationService.sendLocalNotification(
@@ -428,7 +449,7 @@ export const DeviceDetail: React.FC = () => {
                     { deviceId: data.deviceId, status: data.status }
                   );
                 }
-                
+
                 return updated;
               });
             }
@@ -467,7 +488,7 @@ export const DeviceDetail: React.FC = () => {
         if (cleanupFn) cleanupFn();
       });
     };
-  }, [id, updateDevice, t]);
+  }, [id, ultrasonicEnabled, updateDevice, t]);
 
   if (loading) {
     return (
@@ -497,7 +518,7 @@ export const DeviceDetail: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 space-y-4">
+    <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -530,7 +551,7 @@ export const DeviceDetail: React.FC = () => {
 
             <Divider />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="flex items-center gap-3">
                 <Zap className="w-5 h-5 text-warning" />
                 <div>
@@ -641,7 +662,7 @@ export const DeviceDetail: React.FC = () => {
                   aria-label={
                     isListening ? t('device.stopVoice') : t('device.startVoice')
                   }
-                  isDisabled={isDeviceOffline}
+                  isDisabled={ultrasonicEnabled ? true : isDeviceOffline}
                 >
                   {isListening ? (
                     <MicOff className="w-4 h-4" />
@@ -700,7 +721,9 @@ export const DeviceDetail: React.FC = () => {
                   variant={device.motorState === 'ON' ? 'solid' : 'flat'}
                   onPress={() => handleMotorCommand('ON')}
                   isDisabled={
-                    isDeviceOffline || isSendingCommand || isListening
+                    ultrasonicEnabled
+                      ? true
+                      : isDeviceOffline || isSendingCommand || isListening
                   }
                   startContent={<Power className="w-4 h-4" />}
                   className={`flex-1 text-white ${
@@ -714,7 +737,9 @@ export const DeviceDetail: React.FC = () => {
                   variant={device.motorState === 'OFF' ? 'solid' : 'flat'}
                   onPress={() => handleMotorCommand('OFF')}
                   isDisabled={
-                    isDeviceOffline || isSendingCommand || isListening
+                    ultrasonicEnabled
+                      ? true
+                      : isDeviceOffline || isSendingCommand || isListening
                   }
                   startContent={<Power className="w-4 h-4" />}
                   className={`flex-1 text-white ${
@@ -778,53 +803,60 @@ export const DeviceDetail: React.FC = () => {
 
             <Divider />
 
-            {/* Timer Control */}
-            <div>
-              <p className="text-sm font-medium mb-2">{t('device.setTimer')}</p>
-              <div className="flex gap-2">
-                <Input
-                  type="number"
-                  placeholder={t('device.timer')}
-                  value={timerInput}
-                  onValueChange={setTimerInput}
-                  variant="bordered"
-                  className="flex-1"
-                  isDisabled={isDeviceOffline}
-                />
-                <Button
-                  color="primary"
-                  className="text-white bg-primary"
-                  onPress={() => {
-                    if (timerInput) {
-                      handleSetTimer();
-                    } else {
-                      setCommandError(t('device.timerRequired'));
-                    }
-                  }}
-                  isDisabled={isDeviceOffline || isSendingCommand}
-                  startContent={<Clock className="w-4 h-4 text-white" />}
-                >
-                  {t('common.save')}
-                </Button>
-              </div>
-              {device.timerActive && device.timerDuration && (
-                <p className="text-xs text-primary mt-1">
-                  {t('device.timerRemaining')}:{' '}
-                  {Math.floor((device.timerDuration || 0) / 60)}:
-                  {(device.timerDuration || 0) % 60 < 10 ? '0' : ''}
-                  {(device.timerDuration || 0) % 60}
-                </p>
-              )}
-            </div>
+            {/* Timer Control - only in MANUAL mode */}
+            {!ultrasonicEnabled && (
+              <>
+                <div>
+                  <p className="text-sm font-medium mb-2">
+                    {t('device.setTimer')}
+                  </p>
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      placeholder={t('device.timer')}
+                      value={timerInput}
+                      onValueChange={setTimerInput}
+                      variant="bordered"
+                      className="flex-1"
+                      isDisabled={isDeviceOffline}
+                    />
+                    <Button
+                      color="primary"
+                      className="text-white bg-primary"
+                      onPress={() => {
+                        if (timerInput) {
+                          handleSetTimer();
+                        } else {
+                          setCommandError(t('device.timerRequired'));
+                        }
+                      }}
+                      isDisabled={isDeviceOffline || isSendingCommand}
+                      startContent={<Clock className="w-4 h-4 text-white" />}
+                    >
+                      {t('common.save')}
+                    </Button>
+                  </div>
+                  {device.timerActive && device.timerDuration && (
+                    <p className="text-xs text-primary mt-1">
+                      {t('device.timerRemaining')}:{' '}
+                      {Math.floor((device.timerDuration || 0) / 60)}:
+                      {(device.timerDuration || 0) % 60 < 10 ? '0' : ''}
+                      {(device.timerDuration || 0) % 60}
+                    </p>
+                  )}
+                </div>
 
-            <Divider />
+                <Divider />
+              </>
+            )}
 
             {/* Ultrasonic Mode Switch */}
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <p className="text-sm font-medium">
-                    {t('device.ultrasonicMode')}
+                    {t('device.ultrasonicMode')}:{' '}
+                    {ultrasonicEnabled ? t('device.auto') : t('device.manual')}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     {device.ultrasonic
@@ -832,6 +864,14 @@ export const DeviceDetail: React.FC = () => {
                       : t('device.ultrasonicManualDesc')}
                   </p>
                 </div>
+                {ultrasonicEnabled && (
+                  <div
+                    className={`mr-3 h-3 w-3 rounded-full bg-emerald-500 transition-opacity ${
+                      isUltrasonicBlinkOn ? 'opacity-100' : 'opacity-15'
+                    }`}
+                    aria-label="Ultrasonic manual indicator"
+                  />
+                )}
                 <Switch
                   isSelected={device.ultrasonic ?? true}
                   onValueChange={handleUltrasonicToggle}
@@ -854,7 +894,9 @@ export const DeviceDetail: React.FC = () => {
                   variant="solid"
                   onPress={handleSwitchMotor}
                   isDisabled={
-                    isDeviceOffline || isSendingCommand || device.motorFault
+                    ultrasonicEnabled
+                      ? true
+                      : isDeviceOffline || isSendingCommand || device.motorFault
                   }
                   startContent={<RefreshCw className="w-4 h-4 text-white" />}
                   className="w-full text-white bg-secondary"

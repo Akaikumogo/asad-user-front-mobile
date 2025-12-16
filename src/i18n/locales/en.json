@@ -89,6 +89,8 @@
     "voiceOff": "Turn off: \"Motor off\", \"Motor o'chir\", \"Nasos o'chir\"",
     "speakNow": "Speak now...",
     "ultrasonicMode": "Ultrasonic Auto Mode",
+    "auto": "Auto",
+    "manual": "Manual",
     "ultrasonicAutoDesc": "Auto: Motor turns on/off based on water level",
     "ultrasonicManualDesc": "Manual: Motor control only via buttons and timer",
     "offlineWarning": "Device is offline. All actions are disabled."
