@@ -3,7 +3,10 @@ apply plugin: 'com.android.application'
 android {
     namespace "com.watersystem.app"
     compileSdk 34
-
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
     defaultConfig {
         applicationId "com.watersystem.app"
         minSdk 23
