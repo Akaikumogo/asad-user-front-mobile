@@ -33,5 +33,4 @@ build
 
 # Capacitor
 .capacitor
-ios
-android
+# NOTE: `ios/` and `android/` native projects should be committed for CI/Appflow builds.

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Water System</string>
+    <string name="title_activity_main">Water System</string>
+    <string name="package_name">com.watersystem.app</string>
+    <string name="custom_url_scheme">com.watersystem.app</string>
+</resources>
