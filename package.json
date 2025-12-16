@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "postinstall": "node scripts/patch-capacitor-android.cjs",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "cap:sync": "cap sync",
@@ -17,10 +16,10 @@
     "test:coverage": "vitest --coverage"
   },
   "dependencies": {
-    "@capacitor/android": "^7.4.4",
+    "@capacitor/android": "^5.5.1",
     "@capacitor/app": "^5.0.6",
-    "@capacitor/core": "^7.4.4",
-    "@capacitor/ios": "^7.4.4",
+    "@capacitor/core": "^5.5.1",
+    "@capacitor/ios": "^5.5.1",
     "@capacitor/local-notifications": "^5.0.8",
     "@capacitor/preferences": "^5.0.6",
     "@capacitor/push-notifications": "^5.1.2",
@@ -34,7 +33,6 @@
     "framer-motion": "^10.16.16",
     "html5-qrcode": "^2.3.8",
     "i18next": "^23.7.6",
-    "i18next-browser-languagedetector": "^7.2.0",
     "lucide-react": "^0.294.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

@@ -24,6 +24,38 @@ allprojects {
     }
 }
 
+// Appflow runners commonly use JDK 17. Some dependencies (e.g. @capacitor/android v7)
+// default to Java 21 which causes: "invalid source release: 21".
+// Force Java 17 across Android modules to keep builds compatible in CI/Appflow.
+subprojects { subproject ->
+    afterEvaluate {
+        if (subproject.plugins.hasPlugin('com.android.application') || subproject.plugins.hasPlugin('com.android.library')) {
+            try {
+                subproject.android {
+                    compileOptions {
+                        sourceCompatibility JavaVersion.VERSION_17
+                        targetCompatibility JavaVersion.VERSION_17
+                    }
+                }
+            } catch (Throwable ignored) {
+                // no-op
+            }
+        }
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        // Ensure `--release` doesn't get set to 21 by transitive gradle scripts
+        options.release = 17
+    }
+
+    // If any module uses Kotlin, keep it aligned with Java 17 as well
+    tasks.matching { it.class.name == 'org.jetbrains.kotlin.gradle.tasks.KotlinCompile' }.configureEach {
+        kotlinOptions {
+            jvmTarget = '17'
+        }
+    }
+}
+
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
