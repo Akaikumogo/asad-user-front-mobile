@@ -7,7 +7,7 @@ Backend URL allaqachon sozlangan:
 - **API URL**: `https://asadbek.akaikumogo.uz/api/v1`
 - **Socket URL**: `https://asadbek.akaikumogo.uz`
 
-Bu ma'lumotlar `.env` faylida saqlangan va build qilganda avtomatik ishlatiladi.
+Bu ma'lumotlar endi **kod ichida statik** qilib qo'yilgan (qarang: `src/lib/api.ts` va `src/lib/socket.ts`).
 
 ## Android Build Qilish
 
@@ -59,7 +59,7 @@ APK fayli: `android/app/build/outputs/apk/debug/app-debug.apk`
 
 ## Muhim Eslatmalar
 
-1. **Backend URL**: Backend URL `.env` faylida sozlangan va build qilganda avtomatik ishlatiladi.
+1. **Backend URL**: Backend URL kod ichida statik sozlangan (qarang: `src/lib/api.ts` va `src/lib/socket.ts`).
 
 2. **Internet Permission**: Android manifest faylida internet ruxsati bo'lishi kerak (odatda avtomatik qo'shiladi).
 

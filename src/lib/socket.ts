@@ -1,28 +1,11 @@
 import { io, type Socket } from 'socket.io-client';
-import { Capacitor } from '@capacitor/core';
 import { storage } from './storage';
 
-// Get Socket URL - handle mobile vs web
-const getSocketUrl = (): string => {
-  const envUrl = import.meta.env.VITE_SOCKET_URL;
-  const isNative = Capacitor.isNativePlatform();
-
-  if (isNative) {
-    // On mobile, use full URL from env
-    // Example: http://192.168.1.100:5001
-    if (envUrl && !envUrl.includes('localhost')) {
-      return envUrl;
-    }
-    // Default fallback
-    console.warn(
-      'Socket URL not configured for mobile. Please set VITE_SOCKET_URL to your server IP address.'
-    );
-    return 'http://localhost:5001'; // This won't work on mobile, but prevents errors
-  }
-
-  // For web, use relative or localhost
-  return envUrl || 'http://localhost:5001';
-};
+/**
+ * Static socket base URL (previously coming from `.env`).
+ * Socket.IO will use `wss://` automatically when this is `https://`.
+ */
+const SOCKET_BASE_URL = 'https://asadbek.akaikumogo.uz';
 
 class SocketManager {
   private socket: Socket | null = null;
@@ -30,7 +13,7 @@ class SocketManager {
   private subscriptions: Set<string> = new Set(); // QO'SHISH: Subscription'larni saqlash
 
   constructor() {
-    this.socketUrl = getSocketUrl();
+    this.socketUrl = SOCKET_BASE_URL;
   }
 
   async connect(): Promise<Socket> {

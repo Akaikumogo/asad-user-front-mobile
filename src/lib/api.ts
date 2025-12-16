@@ -1,5 +1,4 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
-import { Capacitor } from '@capacitor/core';
 import type {
   User,
   Device,
@@ -9,35 +8,11 @@ import type {
 } from '@/types';
 import { storage } from './storage';
 
-// Get API URL - handle mobile vs web
-const getApiBaseUrl = (): string => {
-  const envUrl = import.meta.env.VITE_API_URL;
-  const isNative = Capacitor.isNativePlatform();
-
-  if (isNative) {
-    // On mobile, use full URL from env or default
-    // For development, use your computer's IP address
-    // Example: http://192.168.1.100:5001/api/v1
-    if (envUrl && !envUrl.includes('localhost')) {
-      return envUrl;
-    }
-    // If localhost, try to construct from socket URL or use default
-    const socketUrl = import.meta.env.VITE_SOCKET_URL;
-    if (socketUrl && !socketUrl.includes('localhost')) {
-      return `${socketUrl}/api/v1`;
-    }
-    // Default fallback - you should set VITE_API_URL for mobile
-    console.warn(
-      'API URL not configured for mobile. Please set VITE_API_URL to your server IP address.'
-    );
-    return '/api/v1'; // This won't work on mobile, but prevents errors
-  }
-
-  // For web, use relative or localhost
-  return envUrl || '/api/v1';
-};
-
-const API_BASE_URL = getApiBaseUrl();
+/**
+ * Static backend base URL (previously coming from `.env`).
+ * IMPORTANT: keep `api/v1` here because all endpoints below are relative to it.
+ */
+const API_BASE_URL = 'https://asadbek.akaikumogo.uz/api/v1';
 
 class ApiClient {
   private client: AxiosInstance;

@@ -62,12 +62,12 @@ npm run cap:android
 
 ## Environment Variables
 
-Create a `.env` file:
+Backend URL hozircha statik qilib qo‘yilgan (Capacitor/mobile build uchun qulay):
 
-```env
-VITE_API_URL=http://localhost:5001/api/v1
-VITE_SOCKET_URL=http://localhost:5001
-```
+- **API URL**: `https://asadbek.akaikumogo.uz/api/v1` (qarang: `src/lib/api.ts`)
+- **Socket URL**: `https://asadbek.akaikumogo.uz` (qarang: `src/lib/socket.ts`)
+
+Agar keyinroq o‘zgartirmoqchi bo‘lsangiz, shu 2ta fayldagi konstantalarni almashtirasiz.
 
 ## Project Structure
 
