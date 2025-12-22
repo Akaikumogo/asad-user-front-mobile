@@ -1,47 +1,46 @@
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
-import { Button, Input, Card, CardBody, CardHeader } from '@heroui/react'
-import { Eye, EyeOff, Droplet } from 'lucide-react'
-import { useAuth } from '@/hooks/useAuth'
-import { loginSchema, type LoginFormData } from '@/utils/validations'
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslation } from 'react-i18next';
+import { Button, Input, Card, CardBody, CardHeader } from '@heroui/react';
+import { Eye, EyeOff, Droplet } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { loginSchema, type LoginFormData } from '@/utils/validations';
 
 export const Login: React.FC = () => {
-  const { t } = useTranslation()
-  const { login } = useAuth()
-  const [isVisible, setIsVisible] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const { t } = useTranslation();
+  const { login } = useAuth();
+  const [isVisible, setIsVisible] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors }
   } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-  })
+    resolver: zodResolver(loginSchema)
+  });
 
   const onSubmit = async (data: LoginFormData) => {
-    setError(null)
-    setIsLoading(true)
+    setError(null);
+    setIsLoading(true);
 
-    const result = await login(data)
+    const result = await login(data);
 
     if (!result.success) {
-      setError(result.error || t('auth.loginError'))
-      setIsLoading(false)
+      setError(result.error || t('auth.loginError'));
+      setIsLoading(false);
     }
-  }
+  };
 
-  const toggleVisibility = () => setIsVisible(!isVisible)
+  const toggleVisibility = () => setIsVisible(!isVisible);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-900">
       <Card className="w-full max-w-md premium-card">
         <CardHeader className="flex flex-col items-center gap-2 pt-8">
-          <div 
+          <div
             className="w-16 h-16 rounded-full flex items-center justify-center mb-2"
             style={{ backgroundColor: 'var(--primary-color)' }}
           >
@@ -70,7 +69,7 @@ export const Login: React.FC = () => {
               autoComplete="username"
               classNames={{
                 input: 'text-base',
-                inputWrapper: 'h-12',
+                inputWrapper: 'h-12'
               }}
             />
 
@@ -99,7 +98,7 @@ export const Login: React.FC = () => {
               type={isVisible ? 'text' : 'password'}
               classNames={{
                 input: 'text-base',
-                inputWrapper: 'h-12',
+                inputWrapper: 'h-12'
               }}
             />
 
@@ -107,29 +106,15 @@ export const Login: React.FC = () => {
               type="submit"
               color="primary"
               size="lg"
-              className="w-full font-semibold"
+              className="w-full font-semibold text-white"
               isLoading={isLoading}
               disabled={isLoading}
             >
               {t('auth.loginButton')}
             </Button>
-
-            <div className="text-center text-sm">
-              <span className="text-gray-600 dark:text-gray-400">
-                {t('auth.noAccount')}{' '}
-              </span>
-              <Link
-                to="/register"
-                className="hover:underline font-medium"
-                style={{ color: 'var(--primary-color)' }}
-              >
-                {t('common.register')}
-              </Link>
-            </div>
           </form>
         </CardBody>
       </Card>
     </div>
-  )
-}
-
+  );
+};

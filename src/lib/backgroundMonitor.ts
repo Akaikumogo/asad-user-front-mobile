@@ -102,49 +102,7 @@ class BackgroundMonitorService {
         (currentTimerEndTime.getTime() - Date.now()) <= timerThreshold &&
         (currentTimerEndTime.getTime() - Date.now()) > 0;
 
-      // Check conditions for notifications
-      if (lastState) {
-        // Timer expired while app was in background
-        if (lastState.timerActive && !currentTimerActive && lastState.motorState === 'ON') {
-          await this.sendNotification(
-            `Timer tugadi: ${device.name}`,
-            `${device.name} qurilmasida timer tugadi va motor o'chirildi.`
-          );
-        }
-
-        // Motor turned off while app was in background (and timer was active)
-        if (lastState.motorState === 'ON' && currentMotorState === 'OFF' && lastState.timerActive) {
-          await this.sendNotification(
-            `Motor o'chdi: ${device.name}`,
-            `${device.name} qurilmasida motor o'chirildi.`
-          );
-        }
-
-        // Device went offline
-        if (lastState.status === 'ONLINE' && currentStatus === 'OFFLINE') {
-          await this.sendNotification(
-            `Qurulma offline: ${device.name}`,
-            `${device.name} qurilmasi offline bo'lib qoldi.`
-          );
-        }
-
-        // Timer is 5 minutes or less and was just set (app is in background)
-        if (isTimer5Minutes && !lastState.timerActive && currentTimerActive) {
-          // Timer was just set to 5 minutes or less while app is in background
-          await this.sendNotification(
-            `Timer 5 daqiqaga qo'yildi: ${device.name}`,
-            `${device.name} qurilmasida timer 5 daqiqaga qo'yildi. Ilovadan chiqib ketsangiz, timer tugaganda xabar olasiz.`
-          );
-        }
-      } else {
-        // First time seeing this device - check if timer is 5 minutes or less
-        if (isTimer5Minutes && currentTimerActive) {
-          await this.sendNotification(
-            `Timer 5 daqiqaga qo'yildi: ${device.name}`,
-            `${device.name} qurilmasida timer 5 daqiqaga qo'yildi. Ilovadan chiqib ketsangiz, timer tugaganda xabar olasiz.`
-          );
-        }
-      }
+      // Notifications removed
 
       // Update last state
       this.lastDeviceStates.set(device._id, {
@@ -156,11 +114,6 @@ class BackgroundMonitorService {
     }
   }
 
-  private async sendNotification(title: string, body: string): Promise<void> {
-    // Notifications removed by request.
-    void title;
-    void body;
-  }
 }
 
 export const backgroundMonitorService = new BackgroundMonitorService();

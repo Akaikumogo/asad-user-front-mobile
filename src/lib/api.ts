@@ -172,15 +172,6 @@ class ApiClient {
     const { data } = await this.client.get('/reports/yearly', { params });
     return data;
   }
-
-  // Push notifications (FCM token register)
-  async registerPushToken(payload: {
-    token: string;
-    platform: 'android' | 'ios';
-    deviceId?: string;
-  }): Promise<void> {
-    await this.client.post('/push/register', payload);
-  }
 }
 
 export const api = new ApiClient();

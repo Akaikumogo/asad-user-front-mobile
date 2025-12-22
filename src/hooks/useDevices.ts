@@ -2,7 +2,6 @@ import { useEffect, useCallback, useRef } from 'react';
 import { api } from '@/lib/api';
 import { useDeviceStore } from '@/store/deviceStore';
 import { socketManager } from '@/lib/socket';
-import { notificationService } from '@/lib/notifications';
 import type { Device } from '@/types';
 
 export const useDevices = () => {
@@ -51,11 +50,6 @@ export const useDevices = () => {
                 (d) => d._id === updatedDevice._id
               );
               if (index >= 0) {
-                const prevDevice = prevDevices[index];
-                void notificationService.notifyMotorChangeIfBackground(
-                  prevDevice,
-                  updatedDevice
-                );
                 // Update existing device
                 const newDevices = [...prevDevices];
                 newDevices[index] = updatedDevice;

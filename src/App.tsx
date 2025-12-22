@@ -1,10 +1,16 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useNavigate
+} from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/authStore';
 import { useLanguageStore } from '@/store/languageStore';
 import { Login } from './pages/Login';
-import { Register } from './pages/Register';
+
 import { Dashboard } from './pages/Dashboard';
 import { DeviceDetail } from './pages/DeviceDetail';
 import { Settings } from './pages/Settings';
@@ -13,7 +19,6 @@ import { socketManager } from './lib/socket';
 import { useThemeStore } from '@/store/themeStore';
 import { Layout } from './components/layout/Layout';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { notificationService } from '@/lib/notifications';
 
 const NavigationBridge = () => {
   const navigate = useNavigate();
@@ -26,7 +31,8 @@ const NavigationBridge = () => {
       }
     };
     window.addEventListener('app:navigate', handler as EventListener);
-    return () => window.removeEventListener('app:navigate', handler as EventListener);
+    return () =>
+      window.removeEventListener('app:navigate', handler as EventListener);
   }, [navigate]);
 
   return null;
@@ -45,8 +51,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       socketManager.connect().catch((error) => {
         console.error('Failed to connect WebSocket:', error);
       });
-      // Enable FCM push registration once user is authenticated
-      void notificationService.enablePushRegistration();
     } else {
       socketManager.disconnect();
     }
@@ -103,8 +107,6 @@ function App() {
     loadLanguage();
     // Load theme from storage
     loadTheme();
-    // Setup notification listeners (does not request permission)
-    notificationService.initialize();
   }, [loadLanguage, loadTheme]);
 
   useEffect(() => {
@@ -122,14 +124,6 @@ function App() {
             element={
               <PublicRoute>
                 <Login />
-              </PublicRoute>
-            }
-          />
-          <Route
-            path="/register"
-            element={
-              <PublicRoute>
-                <Register />
               </PublicRoute>
             }
           />
