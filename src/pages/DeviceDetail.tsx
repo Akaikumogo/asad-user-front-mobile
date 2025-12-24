@@ -123,7 +123,7 @@ export const DeviceDetail: React.FC = () => {
     clearTimerTickers
   ]);
 
-  // When countdown ends: turn motor OFF, set ultrasonic false, and clear timer
+  // When countdown ends: turn motor OFF, timer OFF, ultrasonic false, then after 1s ultrasonic true
   useEffect(() => {
     if (!device?.timerActive) {
       timerEndCommandSentRef.current = false;
@@ -141,7 +141,7 @@ export const DeviceDetail: React.FC = () => {
 
     clearTimerTickers();
 
-    // Optimistic update
+    // Optimistic update: motor OFF, timer OFF, ultrasonic false
     const optimistic: Device = {
       ...device,
       timerActive: false,
@@ -152,24 +152,40 @@ export const DeviceDetail: React.FC = () => {
     setDevice(optimistic);
     updateDevice(optimistic);
 
-    // Send command to backend: motor OFF + ultrasonic false
+    // Send command to backend: motor OFF + timer OFF + ultrasonic false
     api.sendDeviceCommand(id, {
       motor: 'OFF',
+      timer: 0,
       ultrasonic: false
     }).catch((err) => {
       console.error('Failed to send timer end command:', err);
       timerEndCommandSentRef.current = false; // Reset on error to allow retry
     });
 
-    // Refetch after 1s to get latest state
+    // After 1 second, re-enable ultrasonic
     timerRefetchTimeoutRef.current = setTimeout(async () => {
       try {
+        // Send command to re-enable ultrasonic
+        await api.sendDeviceCommand(id, {
+          ultrasonic: true
+        });
+
+        // Refetch to get latest state
         const data = await api.getDevice(id);
         setDevice(data);
         updateDevice(data);
         timerEndCommandSentRef.current = false; // Reset after successful refetch
-      } catch {
-        // ignore
+      } catch (err) {
+        console.error('Failed to re-enable ultrasonic:', err);
+        // Still refetch to get latest state
+        try {
+          const data = await api.getDevice(id);
+          setDevice(data);
+          updateDevice(data);
+        } catch {
+          // ignore
+        }
+        timerEndCommandSentRef.current = false;
       }
     }, 1000);
   }, [

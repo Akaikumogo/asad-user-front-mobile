@@ -16,6 +16,7 @@ class BackgroundMonitorService {
       timerStartTime?: Date;
       ultrasonic?: boolean;
       timerEndCommandSent?: boolean;
+      ultrasonicReenableTimeout?: ReturnType<typeof setTimeout>;
     }
   > = new Map();
   private checkInterval: NodeJS.Timeout | null = null;
@@ -73,6 +74,14 @@ class BackgroundMonitorService {
   stopMonitoring(): void {
     this.isMonitoring = false;
     this.stopBackgroundCheck();
+
+    // Clear all ultrasonic re-enable timeouts
+    this.lastDeviceStates.forEach((state) => {
+      if (state.ultrasonicReenableTimeout) {
+        clearTimeout(state.ultrasonicReenableTimeout);
+      }
+    });
+
     this.devices = [];
     this.lastDeviceStates.clear();
   }
@@ -166,6 +175,13 @@ class BackgroundMonitorService {
         }
       }
 
+      // Clear ultrasonic re-enable timeout if timer is active again or device state changed
+      if (lastState?.ultrasonicReenableTimeout) {
+        if (currentTimerActive || currentMotorState === 'ON') {
+          clearTimeout(lastState.ultrasonicReenableTimeout);
+        }
+      }
+
       // Update last state
       this.lastDeviceStates.set(device._id, {
         motorState: currentMotorState,
@@ -184,7 +200,12 @@ class BackgroundMonitorService {
           (!currentTimerActive && lastState?.timerActive) ||
           (currentTimerActive && !lastState?.timerActive)
             ? false
-            : lastState?.timerEndCommandSent ?? false
+            : lastState?.timerEndCommandSent ?? false,
+        ultrasonicReenableTimeout:
+          // Clear timeout if timer is active again or motor is ON
+          currentTimerActive || currentMotorState === 'ON'
+            ? undefined
+            : lastState?.ultrasonicReenableTimeout
       });
     }
   }
@@ -223,9 +244,10 @@ class BackgroundMonitorService {
             timerEndCommandSent: true
           });
 
-          // Send command to backend: motor OFF + ultrasonic false
+          // Send command to backend: motor OFF + timer OFF + ultrasonic false
           await api.sendDeviceCommand(device._id, {
             motor: 'OFF',
+            timer: 0,
             ultrasonic: false
           });
 
@@ -236,7 +258,8 @@ class BackgroundMonitorService {
             timerDuration: 0,
             motorState: 'OFF',
             ultrasonic: false,
-            timerStartTime: undefined
+            timerStartTime: undefined,
+            timerEndCommandSent: true
           });
 
           // Update device in array
@@ -251,6 +274,50 @@ class BackgroundMonitorService {
               motorState: 'OFF',
               ultrasonic: false
             };
+          }
+
+          // After 1 second, re-enable ultrasonic
+          const ultrasonicTimeout = setTimeout(async () => {
+            try {
+              await api.sendDeviceCommand(device._id, {
+                ultrasonic: true
+              });
+
+              // Update local state
+              const currentState = this.lastDeviceStates.get(device._id);
+              if (currentState) {
+                this.lastDeviceStates.set(device._id, {
+                  ...currentState,
+                  ultrasonic: true,
+                  ultrasonicReenableTimeout: undefined
+                });
+              }
+
+              // Update device in array
+              const deviceIdx = this.devices.findIndex(
+                (d) => d._id === device._id
+              );
+              if (deviceIdx >= 0) {
+                this.devices[deviceIdx] = {
+                  ...this.devices[deviceIdx],
+                  ultrasonic: true
+                };
+              }
+            } catch (error) {
+              console.error(
+                `Failed to re-enable ultrasonic for device ${device._id}:`,
+                error
+              );
+            }
+          }, 1000);
+
+          // Store timeout reference
+          const currentState = this.lastDeviceStates.get(device._id);
+          if (currentState) {
+            this.lastDeviceStates.set(device._id, {
+              ...currentState,
+              ultrasonicReenableTimeout: ultrasonicTimeout
+            });
           }
         } catch (error) {
           console.error(
