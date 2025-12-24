@@ -152,13 +152,32 @@ export const useVoiceCommand = (
   const startListening = useCallback(async () => {
     if (recognition && !isListening) {
       try {
-        // Check and request microphone permission on Android
+        // Check and request microphone permission on Android/iOS
         if (Capacitor.isNativePlatform()) {
           try {
+            // Check if getUserMedia is available
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+              setError('Microphone access is not available on this device')
+              return
+            }
+
             // Request microphone permission using getUserMedia
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+            // This will trigger the native permission dialog on Android/iOS
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+              audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true
+              }
+            })
+            
             // Stop the stream immediately, we just needed permission
-            stream.getTracks().forEach(track => track.stop())
+            stream.getTracks().forEach(track => {
+              track.stop()
+            })
+            
+            // Small delay to ensure permission is fully granted
+            await new Promise(resolve => setTimeout(resolve, 100))
           } catch (permErr: any) {
             console.error('Microphone permission error:', permErr)
             if (permErr.name === 'NotAllowedError' || permErr.name === 'PermissionDeniedError') {
@@ -167,13 +186,17 @@ export const useVoiceCommand = (
             } else if (permErr.name === 'NotFoundError' || permErr.name === 'DevicesNotFoundError') {
               setError('No microphone found on this device')
               return
+            } else if (permErr.name === 'NotReadableError' || permErr.name === 'TrackStartError') {
+              setError('Microphone is being used by another app. Please close other apps and try again.')
+              return
             } else {
-              setError('Failed to access microphone. Please check permissions.')
+              setError('Failed to access microphone. Please check permissions in app settings.')
               return
             }
           }
         }
         
+        // Start speech recognition
         recognition.start()
       } catch (err: any) {
         console.error('Failed to start recognition:', err)
@@ -181,8 +204,10 @@ export const useVoiceCommand = (
           setError('Microphone permission denied. Please enable it in app settings.')
         } else if (err.name === 'no-speech') {
           setError('No speech detected. Please try again.')
+        } else if (err.name === 'aborted') {
+          setError('Voice recognition was interrupted. Please try again.')
         } else {
-          setError('Failed to start voice recognition')
+          setError('Failed to start voice recognition. Please check microphone permissions.')
         }
       }
     }
