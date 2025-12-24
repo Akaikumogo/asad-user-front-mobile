@@ -40,4 +40,6 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Android 13+ notification runtime permission -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Microphone permission for voice control -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 </manifest>

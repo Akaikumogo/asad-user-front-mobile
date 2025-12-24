@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
+import { Capacitor } from '@capacitor/core'
 
 export interface VoiceCommand {
   action: 'ON' | 'OFF'
@@ -148,13 +149,41 @@ export const useVoiceCommand = (
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [language])
 
-  const startListening = useCallback(() => {
+  const startListening = useCallback(async () => {
     if (recognition && !isListening) {
       try {
+        // Check and request microphone permission on Android
+        if (Capacitor.isNativePlatform()) {
+          try {
+            // Request microphone permission using getUserMedia
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+            // Stop the stream immediately, we just needed permission
+            stream.getTracks().forEach(track => track.stop())
+          } catch (permErr: any) {
+            console.error('Microphone permission error:', permErr)
+            if (permErr.name === 'NotAllowedError' || permErr.name === 'PermissionDeniedError') {
+              setError('Microphone permission is required for voice control. Please enable it in app settings.')
+              return
+            } else if (permErr.name === 'NotFoundError' || permErr.name === 'DevicesNotFoundError') {
+              setError('No microphone found on this device')
+              return
+            } else {
+              setError('Failed to access microphone. Please check permissions.')
+              return
+            }
+          }
+        }
+        
         recognition.start()
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to start recognition:', err)
-        setError('Failed to start voice recognition')
+        if (err.name === 'not-allowed' || err.name === 'NotAllowedError') {
+          setError('Microphone permission denied. Please enable it in app settings.')
+        } else if (err.name === 'no-speech') {
+          setError('No speech detected. Please try again.')
+        } else {
+          setError('Failed to start voice recognition')
+        }
       }
     }
   }, [recognition, isListening])

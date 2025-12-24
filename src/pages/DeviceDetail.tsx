@@ -79,6 +79,7 @@ export const DeviceDetail: React.FC = () => {
   const timerRefetchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null
   );
+  const timerEndCommandSentRef = useRef<boolean>(false);
 
   const clearTimerTickers = useCallback(() => {
     if (timerIntervalRef.current) {
@@ -98,14 +99,8 @@ export const DeviceDetail: React.FC = () => {
     return `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
   }, []);
 
-  // Countdown sync for MANUAL mode: decrement each second.
+  // Countdown sync: decrement each second (works regardless of ultrasonic state)
   useEffect(() => {
-    if (ultrasonicEnabled) {
-      clearTimerTickers();
-      setTimerRemaining(0);
-      return;
-    }
-
     const active = !!device?.timerActive;
     const duration = device?.timerDuration ?? 0;
 
@@ -123,42 +118,62 @@ export const DeviceDetail: React.FC = () => {
 
     return () => clearTimerTickers();
   }, [
-    ultrasonicEnabled,
     device?.timerActive,
     device?.timerDuration,
     clearTimerTickers
   ]);
 
-  // When countdown ends: set OFF locally, then refetch once after 1s.
+  // When countdown ends: turn motor OFF, set ultrasonic false, and clear timer
   useEffect(() => {
-    if (ultrasonicEnabled) return;
-    if (!device?.timerActive) return;
-    if (timerRemaining > 0) return;
+    if (!device?.timerActive) {
+      timerEndCommandSentRef.current = false;
+      return;
+    }
+    if (timerRemaining > 0) {
+      timerEndCommandSentRef.current = false;
+      return;
+    }
     if (!device || !id) return;
+    
+    // Prevent duplicate commands
+    if (timerEndCommandSentRef.current) return;
+    timerEndCommandSentRef.current = true;
 
     clearTimerTickers();
 
+    // Optimistic update
     const optimistic: Device = {
       ...device,
       timerActive: false,
       timerDuration: 0,
-      motorState: 'OFF'
+      motorState: 'OFF',
+      ultrasonic: false
     };
     setDevice(optimistic);
     updateDevice(optimistic);
 
+    // Send command to backend: motor OFF + ultrasonic false
+    api.sendDeviceCommand(id, {
+      motor: 'OFF',
+      ultrasonic: false
+    }).catch((err) => {
+      console.error('Failed to send timer end command:', err);
+      timerEndCommandSentRef.current = false; // Reset on error to allow retry
+    });
+
+    // Refetch after 1s to get latest state
     timerRefetchTimeoutRef.current = setTimeout(async () => {
       try {
         const data = await api.getDevice(id);
         setDevice(data);
         updateDevice(data);
+        timerEndCommandSentRef.current = false; // Reset after successful refetch
       } catch {
         // ignore
       }
     }, 1000);
   }, [
     timerRemaining,
-    ultrasonicEnabled,
     device,
     id,
     updateDevice,
@@ -223,7 +238,11 @@ export const DeviceDetail: React.FC = () => {
         setIsSendingCommand(true);
         setCommandError(null);
 
+        // When switching ultrasonic mode, always turn motor OFF first
+        // If switching to false: motor OFF, then set ultrasonic false
+        // If switching to true: motor OFF, then set ultrasonic true
         const updatedDevice = await api.sendDeviceCommand(id, {
+          motor: 'OFF',
           ultrasonic: enabled
         });
         setDevice(updatedDevice);
@@ -436,20 +455,19 @@ export const DeviceDetail: React.FC = () => {
       setIsSendingCommand(true);
       setCommandError(null);
 
-      // MANUAL mode requirement:
+      // Timer requirement:
       // - start countdown immediately (00:05 -> 00:04 ...)
-      // - when saved, motor should be ON
-      if (!ultrasonicEnabled) {
-        const optimistic: Device = {
-          ...device,
-          timerActive: true,
-          timerDuration: timer,
-          motorState: 'ON'
-        };
-        setDevice(optimistic);
-        updateDevice(optimistic);
-        setTimerRemaining(timer);
-      }
+      // - when saved, motor should be ON (if not already)
+      const optimistic: Device = {
+        ...device,
+        timerActive: true,
+        timerDuration: timer,
+        motorState: device.motorState === 'ON' ? device.motorState : 'ON'
+      };
+      setDevice(optimistic);
+      updateDevice(optimistic);
+      setTimerRemaining(timer);
+      timerEndCommandSentRef.current = false; // Reset flag when starting new timer
 
       const updatedDevice = await api.sendDeviceCommand(id, { timer });
       setDevice(updatedDevice);
@@ -469,8 +487,7 @@ export const DeviceDetail: React.FC = () => {
   // Real-time updates via WebSocket
   useEffect(() => {
     if (!id) return;
-    // Only enable realtime updates when ultrasonic mode is ON
-    if (!ultrasonicEnabled) return;
+    // Real-time updates work regardless of ultrasonic state
 
     const setupWebSocket = async () => {
       try {
@@ -483,11 +500,43 @@ export const DeviceDetail: React.FC = () => {
           // Listen for device updates - DARHOL yangilash (async yo'q)
           const handleUpdate = (updatedDevice: Device) => {
             if (updatedDevice._id === id) {
-              setDevice(() => {
-                return updatedDevice;
+              setDevice((prev) => {
+                if (!prev) return updatedDevice;
+                
+                // Real-time motor state updates only apply when ultrasonic is true
+                let finalDevice = {
+                  ...updatedDevice,
+                  motorState:
+                    updatedDevice.ultrasonic && updatedDevice.motorState !== undefined
+                      ? updatedDevice.motorState
+                      : prev.motorState
+                };
+                
+                // If motor turns OFF while timer is active (especially when ultrasonic is true),
+                // clear the timer and set ultrasonic to false
+                if (prev.timerActive && finalDevice.motorState === 'OFF' && prev.motorState === 'ON') {
+                  finalDevice = {
+                    ...finalDevice,
+                    timerActive: false,
+                    timerDuration: 0,
+                    ultrasonic: false
+                  };
+                  setTimerRemaining(0);
+                  clearTimerTickers();
+                  
+                  // Send command to backend: timer clear + ultrasonic false
+                  api.sendDeviceCommand(id, {
+                    timer: 0,
+                    ultrasonic: false
+                  }).catch((err) => {
+                    console.error('Failed to send timer clear command:', err);
+                  });
+                }
+                
+                // Store'ni ham darhol yangilash
+                updateDevice(finalDevice);
+                return finalDevice;
               });
-              // Store'ni ham darhol yangilash
-              updateDevice(updatedDevice);
             }
           };
 
@@ -507,6 +556,11 @@ export const DeviceDetail: React.FC = () => {
               setDevice((prev) => {
                 if (!prev) return prev;
 
+                // Determine the new ultrasonic value (from update or keep previous)
+                const newUltrasonic = data.ultrasonicMode !== undefined
+                  ? data.ultrasonicMode
+                  : prev.ultrasonic;
+
                 const updated = {
                   ...prev,
                   status: data.status,
@@ -522,20 +576,36 @@ export const DeviceDetail: React.FC = () => {
                     data.totalElectricity !== undefined
                       ? data.totalElectricity
                       : prev.totalElectricity,
-                  ultrasonic:
-                    data.ultrasonicMode !== undefined
-                      ? data.ultrasonicMode
-                      : prev.ultrasonic,
+                  ultrasonic: newUltrasonic,
                   activeMotor2:
                     data.activeMotor2 !== undefined
                       ? data.activeMotor2
                       : prev.activeMotor2,
                   height: data.height !== undefined ? data.height : prev.height,
+                  // Real-time motor state updates only apply when ultrasonic is true
                   motorState:
-                    data.motorState !== undefined
+                    data.motorState !== undefined && newUltrasonic
                       ? data.motorState
                       : prev.motorState
                 };
+                
+                // If motor turns OFF while timer is active (especially when ultrasonic is true),
+                // clear the timer and set ultrasonic to false
+                if (prev.timerActive && updated.motorState === 'OFF' && prev.motorState === 'ON') {
+                  updated.timerActive = false;
+                  updated.timerDuration = 0;
+                  updated.ultrasonic = false;
+                  setTimerRemaining(0);
+                  clearTimerTickers();
+                  
+                  // Send command to backend: timer clear + ultrasonic false
+                  api.sendDeviceCommand(id, {
+                    timer: 0,
+                    ultrasonic: false
+                  }).catch((err) => {
+                    console.error('Failed to send timer clear command:', err);
+                  });
+                }
 
                 // Store'ni ham darhol yangilash
                 updateDevice(updated);
@@ -893,13 +963,11 @@ export const DeviceDetail: React.FC = () => {
 
             <Divider />
 
-            {/* Timer Control - only in MANUAL mode */}
-            {!ultrasonicEnabled && (
-              <>
-                <div>
-                  <p className="text-sm font-medium mb-2">
-                    {t('device.setTimer')}
-                  </p>
+            {/* Timer Control - works in both ultrasonic and manual mode */}
+            <div>
+              <p className="text-sm font-medium mb-2">
+                {t('device.setTimer')}
+              </p>
                   <div className="space-y-2">
                     <div className="flex gap-2 items-end">
                       <Input
@@ -974,9 +1042,7 @@ export const DeviceDetail: React.FC = () => {
                   )}
                 </div>
 
-                <Divider />
-              </>
-            )}
+            <Divider />
 
             {/* Ultrasonic Mode Switch */}
             <div>
