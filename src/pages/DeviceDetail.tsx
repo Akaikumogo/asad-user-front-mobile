@@ -167,21 +167,37 @@ export const DeviceDetail: React.FC = () => {
       timerEndCommandSentRef.current = false; // Reset on error to allow retry
     });
 
-    // After 1 second, re-enable ultrasonic ONLY if it was true when timer started
-    if (ultrasonicAtTimerStartRef.current === true) {
+    // Store ultrasonic state at timer end (before sending commands)
+    const wasUltrasonicTrueAtTimerEnd = device.ultrasonic === true;
+
+    // After 1 second, re-enable ultrasonic ONLY if it was true when timer ended
+    // AND only if motor is OFF and ultrasonic is FALSE after timer ends
+    if (wasUltrasonicTrueAtTimerEnd) {
       timerRefetchTimeoutRef.current = setTimeout(async () => {
         try {
-          // Send command to re-enable ultrasonic
-          await api.sendDeviceCommand(id, {
-            ultrasonic: true
-          });
+          // Refetch to get latest state first
+          const latestData = await api.getDevice(id);
+          
+          // Check if motor is OFF and ultrasonic is FALSE before re-enabling
+          if (latestData.motorState === 'OFF' && latestData.ultrasonic === false) {
+            // Send command to re-enable ultrasonic
+            await api.sendDeviceCommand(id, {
+              ultrasonic: true
+            });
 
-          // Refetch to get latest state
-          const data = await api.getDevice(id);
-          setDevice(data);
-          updateDevice(data);
-          timerEndCommandSentRef.current = false; // Reset after successful refetch
-          ultrasonicAtTimerStartRef.current = undefined; // Clear the flag
+            // Refetch to get latest state
+            const data = await api.getDevice(id);
+            setDevice(data);
+            updateDevice(data);
+            timerEndCommandSentRef.current = false; // Reset after successful refetch
+            ultrasonicAtTimerStartRef.current = undefined; // Clear the flag
+          } else {
+            // Motor is ON or ultrasonic is already true, just refetch
+            setDevice(latestData);
+            updateDevice(latestData);
+            timerEndCommandSentRef.current = false;
+            ultrasonicAtTimerStartRef.current = undefined;
+          }
         } catch (err) {
           console.error('Failed to re-enable ultrasonic:', err);
           // Still refetch to get latest state
@@ -197,7 +213,8 @@ export const DeviceDetail: React.FC = () => {
         }
       }, 1000);
     } else {
-      // Clear the flag if ultrasonic was false when timer started
+      // If ultrasonic was false when timer ended, it should NOT become true
+      // Clear the flag
       ultrasonicAtTimerStartRef.current = undefined;
       timerEndCommandSentRef.current = false;
     }

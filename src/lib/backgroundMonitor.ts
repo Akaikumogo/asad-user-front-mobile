@@ -173,32 +173,38 @@ class BackgroundMonitorService {
           }
 
           // If ultrasonic was true, re-enable it after 1 second
+          // BUT only if motor is OFF and ultrasonic is FALSE after timer ends
           if (wasUltrasonicTrue) {
             const ultrasonicTimeout = setTimeout(async () => {
               try {
-                await api.sendDeviceCommand(device._id, {
-                  ultrasonic: true
-                });
-
-                // Update local state
+                // Check current state before re-enabling
                 const currentState = this.lastDeviceStates.get(device._id);
-                if (currentState) {
+                if (
+                  currentState &&
+                  currentState.motorState === 'OFF' &&
+                  currentState.ultrasonic === false
+                ) {
+                  await api.sendDeviceCommand(device._id, {
+                    ultrasonic: true
+                  });
+
+                  // Update local state
                   this.lastDeviceStates.set(device._id, {
                     ...currentState,
                     ultrasonic: true,
                     ultrasonicReenableTimeout: undefined
                   });
-                }
 
-                // Update device in array
-                const deviceIdx = this.devices.findIndex(
-                  (d) => d._id === device._id
-                );
-                if (deviceIdx >= 0) {
-                  this.devices[deviceIdx] = {
-                    ...this.devices[deviceIdx],
-                    ultrasonic: true
-                  };
+                  // Update device in array
+                  const deviceIdx = this.devices.findIndex(
+                    (d) => d._id === device._id
+                  );
+                  if (deviceIdx >= 0) {
+                    this.devices[deviceIdx] = {
+                      ...this.devices[deviceIdx],
+                      ultrasonic: true
+                    };
+                  }
                 }
               } catch (error) {
                 console.error(
@@ -259,31 +265,37 @@ class BackgroundMonitorService {
           }
 
           // After 1 second, re-enable ultrasonic
+          // BUT only if motor is OFF and ultrasonic is FALSE after timer is turned off
           const ultrasonicTimeout = setTimeout(async () => {
             try {
-              await api.sendDeviceCommand(device._id, {
-                ultrasonic: true
-              });
-
-              // Update local state
+              // Check current state before re-enabling
               const currentState = this.lastDeviceStates.get(device._id);
-              if (currentState) {
+              if (
+                currentState &&
+                currentState.motorState === 'OFF' &&
+                currentState.ultrasonic === false
+              ) {
+                await api.sendDeviceCommand(device._id, {
+                  ultrasonic: true
+                });
+
+                // Update local state
                 this.lastDeviceStates.set(device._id, {
                   ...currentState,
                   ultrasonic: true,
                   ultrasonicReenableTimeout: undefined
                 });
-              }
 
-              // Update device in array
-              const deviceIdx = this.devices.findIndex(
-                (d) => d._id === device._id
-              );
-              if (deviceIdx >= 0) {
-                this.devices[deviceIdx] = {
-                  ...this.devices[deviceIdx],
-                  ultrasonic: true
-                };
+                // Update device in array
+                const deviceIdx = this.devices.findIndex(
+                  (d) => d._id === device._id
+                );
+                if (deviceIdx >= 0) {
+                  this.devices[deviceIdx] = {
+                    ...this.devices[deviceIdx],
+                    ultrasonic: true
+                  };
+                }
               }
             } catch (error) {
               console.error(
@@ -382,6 +394,9 @@ class BackgroundMonitorService {
         }
 
         try {
+          // Store ultrasonic state at timer end (before sending commands)
+          const wasUltrasonicTrueAtTimerEnd = lastState.ultrasonic === true;
+
           // Mark as sent before making the call
           this.lastDeviceStates.set(device._id, {
             ...lastState,
@@ -420,34 +435,40 @@ class BackgroundMonitorService {
             };
           }
 
-          // After 1 second, re-enable ultrasonic ONLY if it was true when timer started
-          if (lastState.ultrasonicAtTimerStart === true) {
+          // After 1 second, re-enable ultrasonic ONLY if it was true when timer ended
+          // AND only if motor is OFF and ultrasonic is FALSE after timer ends
+          if (wasUltrasonicTrueAtTimerEnd) {
             const ultrasonicTimeout = setTimeout(async () => {
               try {
-                await api.sendDeviceCommand(device._id, {
-                  ultrasonic: true
-                });
-
-                // Update local state
+                // Check current state before re-enabling
                 const currentState = this.lastDeviceStates.get(device._id);
-                if (currentState) {
+                if (
+                  currentState &&
+                  currentState.motorState === 'OFF' &&
+                  currentState.ultrasonic === false
+                ) {
+                  await api.sendDeviceCommand(device._id, {
+                    ultrasonic: true
+                  });
+
+                  // Update local state
                   this.lastDeviceStates.set(device._id, {
                     ...currentState,
                     ultrasonic: true,
                     ultrasonicReenableTimeout: undefined,
                     ultrasonicAtTimerStart: undefined
                   });
-                }
 
-                // Update device in array
-                const deviceIdx = this.devices.findIndex(
-                  (d) => d._id === device._id
-                );
-                if (deviceIdx >= 0) {
-                  this.devices[deviceIdx] = {
-                    ...this.devices[deviceIdx],
-                    ultrasonic: true
-                  };
+                  // Update device in array
+                  const deviceIdx = this.devices.findIndex(
+                    (d) => d._id === device._id
+                  );
+                  if (deviceIdx >= 0) {
+                    this.devices[deviceIdx] = {
+                      ...this.devices[deviceIdx],
+                      ultrasonic: true
+                    };
+                  }
                 }
               } catch (error) {
                 console.error(
@@ -466,7 +487,8 @@ class BackgroundMonitorService {
               });
             }
           } else {
-            // Clear the flag if ultrasonic was false when timer started
+            // If ultrasonic was false when timer ended, clear the flag
+            // Ultrasonic should NOT become true
             const currentState = this.lastDeviceStates.get(device._id);
             if (currentState) {
               this.lastDeviceStates.set(device._id, {
