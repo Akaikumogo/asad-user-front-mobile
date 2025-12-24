@@ -13,7 +13,11 @@
     "cap:android": "cap open android",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "test:android": "./scripts/test-android.sh",
+    "test:build": "npm run build && npm run lint",
+    "test:gradle": "cd android && ./gradlew clean assembleDebug",
+    "test:full": "npm run test:build && npm run cap:sync && npm run test:gradle"
   },
   "dependencies": {
     "@capacitor/android": "^8.0.0",
