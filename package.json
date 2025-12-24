@@ -16,10 +16,10 @@
     "test:coverage": "vitest --coverage"
   },
   "dependencies": {
-    "@capacitor/android": "^5.5.1",
+    "@capacitor/android": "^8.0.0",
     "@capacitor/app": "^5.0.6",
     "@capacitor/browser": "^8.0.0",
-    "@capacitor/core": "^5.5.1",
+    "@capacitor/core": "^8.0.0",
     "@capacitor/filesystem": "^8.0.0",
     "@capacitor/ios": "^5.5.1",
     "@capacitor/preferences": "^5.0.6",
@@ -48,7 +48,7 @@
     "zustand": "^4.4.7"
   },
   "devDependencies": {
-    "@capacitor/cli": "^5.5.1",
+    "@capacitor/cli": "^8.0.0",
     "@testing-library/jest-dom": "^6.1.5",
     "@testing-library/react": "^14.1.2",
     "@testing-library/user-event": "^14.5.1",
