@@ -13,16 +13,9 @@ import {
 import {
   Zap,
   Droplet,
-  Calendar,
-  Download
+  Calendar
 } from 'lucide-react';
 import { api } from '@/lib/api';
-import { storage } from '@/lib/storage';
-import { Capacitor } from '@capacitor/core';
-import { Filesystem, Directory } from '@capacitor/filesystem';
-import { Share } from '@capacitor/share';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 
 type DeviceReport = {
   deviceId: string;
@@ -169,117 +162,6 @@ export const Reports: React.FC = () => {
     loadYearlyReport
   ]);
 
-  const generatePDF = async (
-    report: DailyReport | WeeklyReport | MonthlyReport | YearlyReport,
-    type: 'daily' | 'weekly' | 'monthly' | 'yearly'
-  ) => {
-    try {
-      const doc = new jsPDF();
-      
-      // Title
-      const title = type === 'daily' 
-        ? `Daily Report - ${(report as DailyReport).date}`
-        : type === 'weekly'
-        ? `Weekly Report - ${(report as WeeklyReport).weekStart} to ${(report as WeeklyReport).weekEnd}`
-        : type === 'monthly'
-        ? `Monthly Report - ${(report as MonthlyReport).month}`
-        : `Yearly Report - ${(report as YearlyReport).year}`;
-      
-      doc.setFontSize(16);
-      doc.text(title, 14, 20);
-      
-      // Summary
-      doc.setFontSize(12);
-      doc.text(`Total Energy: ${report.totalEnergy.toFixed(2)} kWh`, 14, 35);
-      doc.text(`Total Water: ${report.totalWater.toFixed(2)} L`, 14, 42);
-      
-      // Devices table
-      const tableData = report.devices.map(device => [
-        device.deviceName || 'Unknown',
-        device.deviceLocation || '-',
-        `${device.totalEnergy.toFixed(2)} kWh`,
-        `${device.totalWater.toFixed(2)} L`
-      ]);
-      
-      autoTable(doc, {
-        startY: 50,
-        head: [['Device', 'Location', 'Energy', 'Water']],
-        body: tableData,
-        theme: 'striped',
-        headStyles: { fillColor: [59, 130, 246] },
-      });
-      
-      // Generate filename
-      const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-      const filename = `report-${type}-${timestamp}.pdf`;
-      
-      // Save PDF
-      if (Capacitor.isNativePlatform()) {
-        // For Android/iOS - save to filesystem
-        const pdfBlob = doc.output('blob');
-        const reader = new FileReader();
-        
-        reader.onloadend = async () => {
-          try {
-            const base64Data = (reader.result as string).split(',')[1];
-            const savedFile = await Filesystem.writeFile({
-              path: filename,
-              data: base64Data,
-              directory: Directory.Documents,
-              recursive: true
-            });
-            
-            // Save file info to storage for Settings page
-            const savedFiles = await storage.get<Array<{name: string, path: string, date: string}>>('savedPdfs') || [];
-            savedFiles.push({
-              name: filename,
-              path: savedFile.uri,
-              date: new Date().toISOString()
-            });
-            await storage.set('savedPdfs', savedFiles);
-            
-            // Try to share/open the file
-            try {
-              await Share.share({
-                title: title,
-                url: savedFile.uri,
-                dialogTitle: 'Share PDF Report'
-              });
-            } catch (shareErr) {
-              console.log('Share not available, file saved to:', savedFile.uri);
-            }
-          } catch (err: any) {
-            console.error('Error saving PDF:', err);
-            // Check if it's a permission error
-            if (err.message?.includes('permission') || err.message?.includes('Permission')) {
-              setError('File storage permission is required. Please grant storage permission in app settings.');
-            } else {
-              // Fallback: download as blob
-              try {
-                const url = URL.createObjectURL(pdfBlob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = filename;
-                link.click();
-                URL.revokeObjectURL(url);
-              } catch (fallbackErr) {
-                console.error('Fallback download failed:', fallbackErr);
-                setError('Failed to save PDF. Please check app permissions.');
-              }
-            }
-          }
-        };
-        
-        reader.readAsDataURL(pdfBlob);
-      } else {
-        // For web - download directly
-        doc.save(filename);
-      }
-    } catch (err) {
-      console.error('Error generating PDF:', err);
-      setError('Failed to generate PDF report');
-    }
-  };
 
   const renderDeviceCard = (device: DeviceReport) => (
     <Card key={device.deviceId} className="premium-card">
@@ -368,16 +250,8 @@ export const Reports: React.FC = () => {
                 <>
                   <Card className="premium-card mb-4">
                     <CardBody>
-                      <div className="flex justify-between items-center mb-4">
+                      <div className="mb-4">
                         <h3 className="text-lg font-semibold">{t('reports.daily')} {t('reports.title')}</h3>
-                        <Button
-                          color="primary"
-                          variant="flat"
-                          startContent={<Download className="w-4 h-4" />}
-                          onPress={() => generatePDF(dailyReport, 'daily')}
-                        >
-                          {t('reports.downloadPDF')}
-                        </Button>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="flex items-center gap-3">
@@ -464,22 +338,12 @@ export const Reports: React.FC = () => {
                 <>
                   <Card className="premium-card mb-4">
                     <CardBody>
-                      <div className="flex justify-between items-center mb-4">
-                        <div>
-                          <h3 className="text-lg font-semibold">{t('reports.weekly')} {t('reports.title')}</h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {t('reports.weekPeriod')}: {weeklyReport.weekStart} -{' '}
-                            {weeklyReport.weekEnd}
-                          </p>
-                        </div>
-                        <Button
-                          color="primary"
-                          variant="flat"
-                          startContent={<Download className="w-4 h-4" />}
-                          onPress={() => generatePDF(weeklyReport, 'weekly')}
-                        >
-                          {t('reports.downloadPDF')}
-                        </Button>
+                      <div className="mb-4">
+                        <h3 className="text-lg font-semibold">{t('reports.weekly')} {t('reports.title')}</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {t('reports.weekPeriod')}: {weeklyReport.weekStart} -{' '}
+                          {weeklyReport.weekEnd}
+                        </p>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="flex items-center gap-3">
@@ -566,16 +430,8 @@ export const Reports: React.FC = () => {
                 <>
                   <Card className="premium-card mb-4">
                     <CardBody>
-                      <div className="flex justify-between items-center mb-4">
+                      <div className="mb-4">
                         <h3 className="text-lg font-semibold">{t('reports.monthly')} {t('reports.title')}</h3>
-                        <Button
-                          color="primary"
-                          variant="flat"
-                          startContent={<Download className="w-4 h-4" />}
-                          onPress={() => generatePDF(monthlyReport, 'monthly')}
-                        >
-                          {t('reports.downloadPDF')}
-                        </Button>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="flex items-center gap-3">
@@ -664,16 +520,8 @@ export const Reports: React.FC = () => {
                 <>
                   <Card className="premium-card mb-4">
                     <CardBody>
-                      <div className="flex justify-between items-center mb-4">
+                      <div className="mb-4">
                         <h3 className="text-lg font-semibold">{t('reports.yearly')} {t('reports.title')}</h3>
-                        <Button
-                          color="primary"
-                          variant="flat"
-                          startContent={<Download className="w-4 h-4" />}
-                          onPress={() => generatePDF(yearlyReport, 'yearly')}
-                        >
-                          {t('reports.downloadPDF')}
-                        </Button>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="flex items-center gap-3">

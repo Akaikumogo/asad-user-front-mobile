@@ -124,8 +124,7 @@
     "totalEnergy": "Всего энергии",
     "totalWater": "Всего воды",
     "weekPeriod": "Период недели",
-    "noData": "Данные недоступны",
-    "downloadPDF": "Скачать PDF"
+    "noData": "Данные недоступны"
   },
   "settings": {
     "title": "Настройки",
@@ -134,11 +133,6 @@
     "selectColor": "Выберите цвет",
     "language": "Язык",
     "languageDescription": "Выберите язык приложения",
-    "selectLanguage": "Выберите язык",
-    "downloadedFiles": "Загруженные файлы",
-    "downloadedFilesDescription": "Загруженные PDF отчеты",
-    "noFiles": "Нет загруженных файлов",
-    "openFile": "Открыть файл",
-    "deleteFile": "Удалить"
+    "selectLanguage": "Выберите язык"
   }
 }

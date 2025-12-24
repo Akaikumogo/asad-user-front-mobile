@@ -127,8 +127,7 @@
     "totalEnergy": "Jami elektr",
     "totalWater": "Jami suv",
     "weekPeriod": "Hafta davri",
-    "noData": "Ma'lumot topilmadi",
-    "downloadPDF": "PDF yuklash"
+    "noData": "Ma'lumot topilmadi"
   },
   "settings": {
     "title": "Sozlamalar",
@@ -137,11 +136,6 @@
     "selectColor": "Rangni tanlang",
     "language": "Til",
     "languageDescription": "Ilova tilini tanlang",
-    "selectLanguage": "Tilni tanlang",
-    "downloadedFiles": "Yuklangan fayllar",
-    "downloadedFilesDescription": "Yuklangan PDF hisobotlar",
-    "noFiles": "Yuklangan fayllar yo'q",
-    "openFile": "Faylni ochish",
-    "deleteFile": "O'chirish"
+    "selectLanguage": "Tilni tanlang"
   }
 }

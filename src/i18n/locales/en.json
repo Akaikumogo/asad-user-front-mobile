@@ -124,8 +124,7 @@
     "totalEnergy": "Total Energy",
     "totalWater": "Total Water",
     "weekPeriod": "Week Period",
-    "noData": "No data available",
-    "downloadPDF": "Download PDF"
+    "noData": "No data available"
   },
   "settings": {
     "title": "Settings",
@@ -134,11 +133,6 @@
     "selectColor": "Select Color",
     "language": "Language",
     "languageDescription": "Choose the app language",
-    "selectLanguage": "Select Language",
-    "downloadedFiles": "Downloaded Files",
-    "downloadedFilesDescription": "Downloaded PDF reports",
-    "noFiles": "No downloaded files",
-    "openFile": "Open File",
-    "deleteFile": "Delete"
+    "selectLanguage": "Select Language"
   }
 }

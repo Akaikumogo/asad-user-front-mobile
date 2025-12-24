@@ -42,14 +42,4 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Microphone permission for voice control -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    
-    <!-- File storage permissions for PDF downloads -->
-    <!-- Android 9 and below: Required for writing to external storage -->
-    <uses-permission 
-        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="32" />
-    <uses-permission 
-        android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="32" />
-    <!-- Android 10+ uses scoped storage, no permission needed for app-specific directories -->
 </manifest>
