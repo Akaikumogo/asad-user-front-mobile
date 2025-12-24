@@ -10,7 +10,7 @@
         android:theme="@style/AppTheme">
 
         <activity
-            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
             android:name=".MainActivity"
             android:label="@string/title_activity_main"
             android:theme="@style/AppTheme.NoActionBarLaunch"
@@ -37,9 +37,19 @@
 
     <!-- Permissions -->
 
+    <!-- Internet permission for API calls and WebSocket -->
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Android 13+ notification runtime permission -->
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    
     <!-- Microphone permission for voice control -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    
+    <!-- Notification permission for Android 13+ (API 33+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    
+    <!-- Foreground service permission for background monitoring (Android 9+) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    
+    <!-- Wake lock permission for keeping device awake during background operations -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 </manifest>

@@ -1,10 +1,8 @@
 apply plugin: 'com.android.application'
-apply plugin: 'org.jetbrains.kotlin.android'
 
 android {
-    namespace "com.watersystem.app"
-    compileSdkVersion rootProject.ext.compileSdkVersion
-    
+    namespace = "com.watersystem.app"
+    compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
         applicationId "com.watersystem.app"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -12,26 +10,16 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-
         aaptOptions {
-            ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
-
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
-
-    kotlinOptions {
-        jvmTarget = "17"
-        freeCompilerArgs += ["-Xjvm-default=all"]
-    }
-
-    kotlin {
-        jvmToolchain(17)
-    }
-
     buildTypes {
         release {
             minifyEnabled false
@@ -41,32 +29,25 @@ android {
 }
 
 repositories {
-    google()
-    mavenCentral()
-    flatDir {
+    flatDir{
         dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
     }
 }
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
-
     implementation project(':capacitor-android')
-    implementation project(':capacitor-cordova-android-plugins')
-
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
 }
 
-// Capacitor build script
 apply from: 'capacitor.build.gradle'
 
-// Google Services optional
 try {
     def servicesJSON = file('google-services.json')
     if (servicesJSON.text) {
