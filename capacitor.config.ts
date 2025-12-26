@@ -1,5 +1,4 @@
 import { CapacitorConfig } from '@capacitor/cli';
-
 const config: CapacitorConfig = {
   appId: 'com.watersystem.app',
   appName: 'Water System',
@@ -19,5 +18,4 @@ const config: CapacitorConfig = {
     }
   }
 };
-
 export default config;
