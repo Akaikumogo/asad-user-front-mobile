@@ -124,7 +124,15 @@
     "totalEnergy": "Total Energy",
     "totalWater": "Total Water",
     "weekPeriod": "Week Period",
-    "noData": "No data available"
+    "noData": "No data available",
+    "downloadPDF": "Download PDF",
+    "downloading": "Downloading...",
+    "downloadSuccess": "PDF downloaded successfully",
+    "downloadError": "Failed to download PDF",
+    "deviceName": "Device Name",
+    "location": "Location",
+    "date": "Date",
+    "devices": "Devices"
   },
   "settings": {
     "title": "Settings",

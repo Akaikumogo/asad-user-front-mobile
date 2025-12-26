@@ -127,7 +127,15 @@
     "totalEnergy": "Jami elektr",
     "totalWater": "Jami suv",
     "weekPeriod": "Hafta davri",
-    "noData": "Ma'lumot topilmadi"
+    "noData": "Ma'lumot topilmadi",
+    "downloadPDF": "PDF yuklab olish",
+    "downloading": "Yuklanmoqda...",
+    "downloadSuccess": "PDF muvaffaqiyatli yuklandi",
+    "downloadError": "PDF yuklab olishda xatolik",
+    "deviceName": "Qurilma nomi",
+    "location": "Manzil",
+    "date": "Sana",
+    "devices": "Qurilmalar"
   },
   "settings": {
     "title": "Sozlamalar",

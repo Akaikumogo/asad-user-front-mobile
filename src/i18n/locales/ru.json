@@ -124,7 +124,15 @@
     "totalEnergy": "Всего энергии",
     "totalWater": "Всего воды",
     "weekPeriod": "Период недели",
-    "noData": "Данные недоступны"
+    "noData": "Данные недоступны",
+    "downloadPDF": "Скачать PDF",
+    "downloading": "Загрузка...",
+    "downloadSuccess": "PDF успешно загружен",
+    "downloadError": "Не удалось загрузить PDF",
+    "deviceName": "Название устройства",
+    "location": "Местоположение",
+    "date": "Дата",
+    "devices": "Устройства"
   },
   "settings": {
     "title": "Настройки",

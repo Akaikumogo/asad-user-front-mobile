@@ -13,9 +13,11 @@ import {
 import {
   Zap,
   Droplet,
-  Calendar
+  Calendar,
+  Download
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { generatePDF } from '@/utils/pdfGenerator';
 
 type DeviceReport = {
   deviceId: string;
@@ -62,6 +64,9 @@ export const Reports: React.FC = () => {
   const [activeTab, setActiveTab] = useState('daily');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
 
   // Daily report
   const [dailyReport, setDailyReport] = useState<DailyReport | null>(null);
@@ -162,6 +167,71 @@ export const Reports: React.FC = () => {
     loadYearlyReport
   ]);
 
+  const handleDownloadPDF = useCallback(async (type: 'daily' | 'monthly' | 'yearly') => {
+    try {
+      setDownloading(true);
+      setDownloadError(null);
+      setDownloadSuccess(false);
+
+      let reportData: any = null;
+      
+      if (type === 'daily' && dailyReport) {
+        reportData = {
+          type: 'daily',
+          date: dailyDate,
+          devices: dailyReport.devices,
+          totalEnergy: dailyReport.totalEnergy,
+          totalWater: dailyReport.totalWater,
+        };
+      } else if (type === 'monthly' && monthlyReport) {
+        reportData = {
+          type: 'monthly',
+          month: month,
+          devices: monthlyReport.devices,
+          totalEnergy: monthlyReport.totalEnergy,
+          totalWater: monthlyReport.totalWater,
+        };
+      } else if (type === 'yearly' && yearlyReport) {
+        reportData = {
+          type: 'yearly',
+          year: year,
+          devices: yearlyReport.devices,
+          totalEnergy: yearlyReport.totalEnergy,
+          totalWater: yearlyReport.totalWater,
+        };
+      }
+
+      if (!reportData) {
+        throw new Error(t('reports.loadError'));
+      }
+
+      await generatePDF(reportData, {
+        title: t('reports.title'),
+        daily: t('reports.daily'),
+        monthly: t('reports.monthly'),
+        yearly: t('reports.yearly'),
+        energy: t('reports.energy'),
+        water: t('reports.water'),
+        totalEnergy: t('reports.totalEnergy'),
+        totalWater: t('reports.totalWater'),
+        deviceName: t('reports.deviceName'),
+        location: t('reports.location'),
+        date: t('reports.date'),
+        downloadSuccess: t('reports.downloadSuccess'),
+        downloadError: t('reports.downloadError'),
+        devices: t('reports.devices'),
+      });
+
+      setDownloadSuccess(true);
+      setTimeout(() => setDownloadSuccess(false), 3000);
+    } catch (err: any) {
+      const errorMessage = err.message || t('reports.downloadError');
+      setDownloadError(errorMessage);
+      setTimeout(() => setDownloadError(null), 5000);
+    } finally {
+      setDownloading(false);
+    }
+  }, [dailyReport, monthlyReport, yearlyReport, dailyDate, month, year, t]);
 
   const renderDeviceCard = (device: DeviceReport) => (
     <Card key={device.deviceId} className="premium-card">
@@ -242,6 +312,22 @@ export const Reports: React.FC = () => {
                 </Card>
               )}
 
+              {downloadError && (
+                <Card className="mb-4">
+                  <CardBody>
+                    <p className="text-danger text-sm">{downloadError}</p>
+                  </CardBody>
+                </Card>
+              )}
+
+              {downloadSuccess && (
+                <Card className="mb-4">
+                  <CardBody>
+                    <p className="text-success text-sm">{t('reports.downloadSuccess')}</p>
+                  </CardBody>
+                </Card>
+              )}
+
               {loading ? (
                 <div className="flex justify-center py-12">
                   <Spinner size="lg" color="primary" />
@@ -250,8 +336,18 @@ export const Reports: React.FC = () => {
                 <>
                   <Card className="premium-card mb-4">
                     <CardBody>
-                      <div className="mb-4">
+                      <div className="mb-4 flex justify-between items-center">
                         <h3 className="text-lg font-semibold">{t('reports.daily')} {t('reports.title')}</h3>
+                        <Button
+                          color="success"
+                          variant="flat"
+                          startContent={<Download className="w-4 h-4" />}
+                          onPress={() => handleDownloadPDF('daily')}
+                          isLoading={downloading}
+                          isDisabled={!dailyReport}
+                        >
+                          {t('reports.downloadPDF')}
+                        </Button>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="flex items-center gap-3">
@@ -339,7 +435,9 @@ export const Reports: React.FC = () => {
                   <Card className="premium-card mb-4">
                     <CardBody>
                       <div className="mb-4">
-                        <h3 className="text-lg font-semibold">{t('reports.weekly')} {t('reports.title')}</h3>
+                        <div className="flex justify-between items-center mb-2">
+                          <h3 className="text-lg font-semibold">{t('reports.weekly')} {t('reports.title')}</h3>
+                        </div>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
                           {t('reports.weekPeriod')}: {weeklyReport.weekStart} -{' '}
                           {weeklyReport.weekEnd}
@@ -422,6 +520,22 @@ export const Reports: React.FC = () => {
                 </Card>
               )}
 
+              {downloadError && (
+                <Card className="mb-4">
+                  <CardBody>
+                    <p className="text-danger text-sm">{downloadError}</p>
+                  </CardBody>
+                </Card>
+              )}
+
+              {downloadSuccess && (
+                <Card className="mb-4">
+                  <CardBody>
+                    <p className="text-success text-sm">{t('reports.downloadSuccess')}</p>
+                  </CardBody>
+                </Card>
+              )}
+
               {loading ? (
                 <div className="flex justify-center py-12">
                   <Spinner size="lg" color="primary" />
@@ -430,8 +544,18 @@ export const Reports: React.FC = () => {
                 <>
                   <Card className="premium-card mb-4">
                     <CardBody>
-                      <div className="mb-4">
+                      <div className="mb-4 flex justify-between items-center">
                         <h3 className="text-lg font-semibold">{t('reports.monthly')} {t('reports.title')}</h3>
+                        <Button
+                          color="success"
+                          variant="flat"
+                          startContent={<Download className="w-4 h-4" />}
+                          onPress={() => handleDownloadPDF('monthly')}
+                          isLoading={downloading}
+                          isDisabled={!monthlyReport}
+                        >
+                          {t('reports.downloadPDF')}
+                        </Button>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="flex items-center gap-3">
@@ -512,6 +636,22 @@ export const Reports: React.FC = () => {
                 </Card>
               )}
 
+              {downloadError && (
+                <Card className="mb-4">
+                  <CardBody>
+                    <p className="text-danger text-sm">{downloadError}</p>
+                  </CardBody>
+                </Card>
+              )}
+
+              {downloadSuccess && (
+                <Card className="mb-4">
+                  <CardBody>
+                    <p className="text-success text-sm">{t('reports.downloadSuccess')}</p>
+                  </CardBody>
+                </Card>
+              )}
+
               {loading ? (
                 <div className="flex justify-center py-12">
                   <Spinner size="lg" color="primary" />
@@ -520,8 +660,18 @@ export const Reports: React.FC = () => {
                 <>
                   <Card className="premium-card mb-4">
                     <CardBody>
-                      <div className="mb-4">
+                      <div className="mb-4 flex justify-between items-center">
                         <h3 className="text-lg font-semibold">{t('reports.yearly')} {t('reports.title')}</h3>
+                        <Button
+                          color="success"
+                          variant="flat"
+                          startContent={<Download className="w-4 h-4" />}
+                          onPress={() => handleDownloadPDF('yearly')}
+                          isLoading={downloading}
+                          isDisabled={!yearlyReport}
+                        >
+                          {t('reports.downloadPDF')}
+                        </Button>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="flex items-center gap-3">
