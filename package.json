@@ -11,7 +11,7 @@
     "cap:sync": "cap sync && node scripts/patch-capacitor-build-gradle.cjs",
     "cap:ios": "cap open ios",
     "cap:android": "cap open android",
-    "postinstall": "node scripts/patch-capacitor-android.cjs && node scripts/patch-capacitor-build-gradle.cjs",
+    "postinstall": "echo 'No patches needed'",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
